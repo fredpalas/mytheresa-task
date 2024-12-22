@@ -52,7 +52,6 @@ jobs:
           MYSQL_PASSWORD: 123456
         ports:
           - 3306:3306
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -61,10 +60,17 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: 8.3
+          extensions: mbstring, xml, ctype, iconv, intl, pdo, pdo_mysql, dom, filter, gd, iconv, json, mbstring
 
       - name: Install dependencies
         run: composer install --prefer-dist --no-interaction
 
+      - name: Wait for MySQL to be ready
+        run: |
+          until mysqladmin ping -h"127.0.0.1" --silent; do
+            echo "Waiting for database connection..."
+            sleep 1
+          done
       - name: Run PHPUnit
         run: |
           php -dxdebug.mode=coverage bin/phpunit \
