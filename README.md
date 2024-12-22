@@ -27,73 +27,123 @@ and visit
 
 `make phpunit`
 
-#### Composer commands
+Warning are showing because some dependencies are not updated with deprecation warnings
 
-`./exec commands`
+#### Symfony Console
 
-#### Docker commands
+`./exec console {command}`
 
-`./exec start` docker-compose up -d
-`./exec stop` docker-compose stop
-`./exec @` execute any parameter of docker ex: `./exec exec php-fpm bash`
+## Decisions
 
-#### Wrapper help
+- Framework: Symfony 7
+- Database: MySQL
 
-`./exec help`
+## API
 
-`./exec --help`
+For creating API Symfony provides flexibility for create a Domain Driven Design (DDD) structure.
 
-## Code
+Database MySQL for easy setup and configuration
 
-### Contexts
+Using DDD and Vertical Slice Architecture, we can create a structure like this:
 
-add your contexts on:
-
-`src/{your_contexts}`
-
-#### Domain
-
-on the context folder create your domain name
-
-`src/{your_contexts}/{domain}`
+### DDD and Vertical Slice Architecture structure
 
 ```
-Application\*
-Domain\*
-Infrastructure\*
+src/
+    Shop/
+        Product/ #Product Domain
+            Application/
+                Find/
+                    FindProductsWithPromotionsAppliedQuery.php #Query Find Product
+                    FindProductsWithPromotionsAppliedQueryHandler.php #Query Handler
+                    FindProductsWithPromotionsAppliedQueryResponse.php #Query Response
+            Domain/
+                Events/ #Events
+                Read/ #Read Model
+                Product.php #Entity Domain
+            Infrastructure/
+                Persistence/ #Repository Implementation
+                    Doctrine/ #Doctrine Mapping
+        Promotion/ #Promotion Domain
+            Application/
+                Find/
+                    AllPromotionFinder.php #Finder All Promotions
+            Domain/                
+                Promotion.php #Entity Domain
+            Infrastructure/
+                Persistence/ #Repository Implementation
+                    Doctrine/ #Doctrine Mapping
+    Shared/ #Shared Code Base
+    DataFixtures/ #Fixtures for Database, for time and don't move away from src folder
 ```
 
-## Configs
+### Api Endpoints Controller
 
-folder:
+For don't mix the vertical slice architecture with the controller I move the controller as like a separate apps, so can
+be deployed in a different server or microservice.
 
-`config\*`
+```
+apps/
+  Shop/
+    Http/
+      Controllers/
+        Products/
+          ListProductsController.php #List Products Controller
+```
 
-[documentation](https://symfony.com/doc/current/configuration.html)
+### Tests
 
-## Migrations
+Exist 3 types of tests in this project `unit`, `integration` and `feature` tests
 
-`make migrations`
+```
+tests/
+  Unit/
+    Shop/
+      Product/
+        Application/
+          Find/
+            FindProductsWithPromotionsAppliedQueryHandlerTest.php #Unit Test for Query Handler
+        Domain/
+          ProductMother.php #Mother for Product Entity (aka Factory)
+      Promotion/
+        Application/
+          Find/
+            AllPromotionFinderTest.php #Unit Test for Finder
+        Domain/
+          PromotionMother.php #Mother for Promotion Entity (aka Factory)
+  Integration/
+    Shop/
+      Product/
+        Infrastructure/
+          Persistence/
+            ProductDoctrineRepositoryTest.php #Integration Test for Repository with Doctrine and MySQL
+      Promotion/
+        Infrastructure/
+          Persistence/
+            PromotionDoctrineRepositoryTest.php #Integration Test for Repository with Doctrine and MySQL
+  Feature/
+    Controller:
+      HealthCheckControllerTest.php #Feature Test for health check controller
+    Http/
+      Controllers/
+        Products/
+          ListProductsControllerTest.php #Feature Test for list products controller
+          ProductListTrait.php #Trait list of the products response
+```
 
-## Fixture
+### Symfony Configuration
 
-`make fixtures`
+all teh configuration is in the `config` folder
 
-### PHP Fpm
+```
+config/
+  packages/
+    doctrine.yaml #Doctrine Configuration
+    framework.yaml #Framework Configuration
+  routes.yaml #Routes Configuration
+  services.yaml #Services Configuration  
+```
 
-`docker\php-fpm`
+### Docker
 
-Dockerfile:
-`docker\php-fpm\Dockerfile`
-
-### Nginx
-
-`docker\nginx`
-
-Local template:
-
-`docker\nginx\templates\default.conf.template`
-
-Deployment template
-
-`docker\nginx\conf.d\default.conf`
+All the docker configuration is in the `docker` folder executing the `docker-compose.yml` file in the root folder
