@@ -10,6 +10,8 @@ filtered.
 ### Requirement
 
 - [docker](https://docs.docker.com/engine/install/)
+- Port 8080 available if not available create a `.env.local` file with `NGINX_HOST_HTTP_PORT=8081`
+- Port 3306 available if not available create a `.env.local` file with `MYSQL_HOST_PORT=3307`
 
 ### Execute
 
