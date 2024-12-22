@@ -37,13 +37,13 @@ jobs:
       MYSQL_ROOT_PASSWORD: 123456
       DATABASE_NAME: mydb_test
       DATABASE_PASSWORD: 123456
-      DATABASE_USER: root
-      DATABASE_URL: mysql://root:123456@mysql:3306/mydb_test?serverVersion=8.0.29&charset=utf8mb4
+      DATABASE_USER: local
+      DATABASE_URL: mysql://local:123456@mysql:3306/mydb_test?serverVersion=8.0.29&charset=utf8mb4
 
     services:
       mysql:
         image: mysql:8.0.29
-        options: --authentication_policy=caching_sha2_password --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
         env:
           MYSQL_ALLOW_EMPTY_PASSWORD: false
           MYSQL_ROOT_PASSWORD: 123456
