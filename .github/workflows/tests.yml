@@ -13,9 +13,6 @@ jobs:
     name: Build Backend
     runs-on: ubuntu-latest
 
-    env:
-      PHP_IMAGE: fredpalas/docker-php-fpm:php-8.2
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -23,7 +20,7 @@ jobs:
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: 8.2
+          php-version: 8.3
 
       - name: Install dependencies
         run: composer install --prefer-dist --no-interaction
@@ -34,7 +31,6 @@ jobs:
     needs: build-backend-ci
 
     env:
-      PHP_IMAGE: fredpalas/docker-php-fpm:php-8.2
       COMPOSER_CACHE_DIR: .composer/cache
       MYSQL_ROOT_PASSWORD: 123456
       MYSQL_DATABASE: mydb_test
@@ -59,7 +55,7 @@ jobs:
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: 8.2
+          php-version: 8.3
 
       - name: Install dependencies
         run: composer install --prefer-dist --no-interaction
