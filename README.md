@@ -52,7 +52,10 @@ Warning are showing because some dependencies are not updated with deprecation w
 
 For creating API Symfony provides flexibility for create a Domain Driven Design (DDD) structure.
 
-Database MySQL for easy setup and configuration
+Database MySQL for easy setup and configuration.
+
+On case of more products is possible to use a cache system like Redis for cache the products with the promotions
+applied.
 
 Using DDD and Vertical Slice Architecture, we can create a structure like this:
 
