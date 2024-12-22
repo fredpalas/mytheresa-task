@@ -21,6 +21,14 @@ and visit
 
 [http://localhost:8080/products](http://localhost:8080/products)
 
+With Category Filter
+
+[http://localhost:8080/products?category=boots](http://localhost:8080/products?category=boots)
+
+With Price less than Filter
+
+[http://localhost:8080/products?priceLessThan=80000](http://localhost:8080/products?priceLessThan=80000)
+
 ### Commands
 
 #### Tests
