@@ -38,7 +38,7 @@ jobs:
       DATABASE_NAME: mydb_test
       DATABASE_PASSWORD: 123456
       DATABASE_USER: local
-      DATABASE_URL: mysql://local:123456@localhost:3306/mydb_test?serverVersion=8.0.29&charset=utf8mb4
+      DATABASE_URL: mysql://root:123456@localhost:3306/mydb_test?serverVersion=8.0.29&charset=utf8mb4
 
     services:
       mysql:
