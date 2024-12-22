@@ -34,6 +34,8 @@ jobs:
       COMPOSER_CACHE_DIR: .composer/cache
       MYSQL_ROOT_PASSWORD: 123456
       MYSQL_DATABASE: mydb_test
+      DATABASE_PASSWORD: 123456
+      DATABASE_USER: root
 
     services:
       mysql:
@@ -43,8 +45,6 @@ jobs:
           MYSQL_DATABASE: mydb_test
         ports:
           - 3306:3306
-        volumes:
-          - ./mysql-data:/var/lib/mysql
 
     steps:
       - name: Checkout code
