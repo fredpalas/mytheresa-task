@@ -1,0 +1,115 @@
+# This file is the entry point to configure your own services.
+# Files in the packages/ subdirectory configure your dependencies.
+
+# Put parameters here that don't need to change on each machine where the app is deployed
+# https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
+parameters:
+  env(EBSQS_TRANSPORT_DSN): 'ebsqs:'
+  env(MESSENGER_TRANSPORT_QUEUE_NAME): 'user-management'
+  env(MESSENGER_TRANSPORT_EVENT_BUS_NAME): 'user-management'
+  ebsqs.transport.dsn: '%env(EBSQS_TRANSPORT_DSN)%'
+  ebsqs.transport.queue_name: '%env(MESSENGER_TRANSPORT_QUEUE_NAME)%'
+  ebsqs.transport.event_bus_name: '%env(MESSENGER_TRANSPORT_EVENT_BUS_NAME)%'
+  service_name: 'classroom-service'
+  service_version: 'v1'
+  environment: '%env(APP_ENV)%'
+  env(MONGODB_URL): ''
+  env(MONGODB_DB): ''
+  env(AWS_DEFAULT_REGION): 'eu-central-1'
+  aws_default_region: '%env(default::AWS_DEFAULT_REGION)%'
+
+services:
+  _instanceof:
+    App\Shared\Domain\Bus\Event\DomainEventSubscriber:
+      tags: [
+        { name: 'app.domain_event_subscriber' },
+        { name: 'messenger.message_handler', bus: 'domain.event.bus' }
+      ]
+    #
+    App\Shared\Domain\Bus\Command\CommandHandler:
+      tags: [ 'app.command_handler' ]
+
+    App\Shared\Domain\Bus\Query\QueryHandler:
+      tags: [ 'app.query_handler' ]
+    App\Shared\Domain\Bus\Event\DomainEvent:
+      tags: [ 'app.domain_event' ]
+      autowire: false
+    App\Shared\Domain\Bus\Query\Response:
+      autowire: false
+    App\Shared\Domain\Bus\Command\Command:
+      autowire: false
+    App\Shared\Domain\Bus\Query\Query:
+      autowire: false
+  # default configuration for services in *this* file
+  _defaults:
+    autowire: true      # Automatically injects dependencies in your services.
+    autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+    bind:
+      Aws\S3\S3ClientInterface: '@aws.s3'
+      App\Shared\Domain\Logger: '@App\Shared\Infrastructure\Logger\MonologLogger'
+  # makes classes in src/ available to be used as services
+  # this creates a service per class whose id is the fully-qualified class name
+  App\:
+    resource: '../src/'
+    exclude:
+      - '../src/DependencyInjection/'
+      - '../src/Entity/'
+      - '../src/Kernel.php'
+  Shop\:
+    resource: '../apps/Shop/'
+  App\Shared\Infrastructure\Logger\MonologLogger:
+    arguments:
+      $logger: '@monolog.logger'
+  App\Shared\Infrastructure\Bus\Event\DomainEventMapping:
+    arguments: [ !tagged app.domain_event_subscriber ]
+  App\Shared\Infrastructure\Bus\Event\DomainEventMap:
+    arguments:
+      [ !tagged_locator { tag: 'app.domain_event', default_index_method: 'eventName' } ]
+  App\Shared\Infrastructure\Factory\NormalizerFactory:
+    arguments: [ !tagged serializer.normalizer ]
+    public: true
+  App\Shared\Infrastructure\Bus\Command\InMemorySymfonyCommandBus:
+    autoconfigure: false
+    arguments:
+      $commandHandlers: !tagged app.command_handler
+    calls:
+      - bus: [ ]
+  App\Shared\Domain\Bus\Command\CommandBus: '@App\Shared\Infrastructure\Bus\Command\InMemorySymfonyCommandBus'
+  App\Shared\Domain\Bus\Query\QueryBus: '@App\Shared\Infrastructure\Bus\Query\InMemorySymfonyQueryBus'
+  App\Shared\Domain\Bus\Event\EventBus: '@App\Shared\Infrastructure\Bus\Event\MySql\DoctrineEventBus'
+  App\Shared\Infrastructure\Bus\Query\InMemorySymfonyQueryBus:
+    arguments: [ !tagged app.query_handler ]
+  App\Shared\Infrastructure\Bus\Event\InMemory\InMemorySymfonyEventBus:
+    arguments: [ !tagged app.domain_event_subscriber ]
+    lazy: true
+  App\Shared\Infrastructure\Symfony\AddJsonBodyToRequestListener:
+    tags:
+      - { name: kernel.event_listener, event: kernel.request, method: onKernelRequest }
+  App\Shared\Infrastructure\Http\Transformer\JsonExceptionTransformerListener:
+    arguments:
+      $debug: '%kernel.debug%'
+    tags:
+      - { name: kernel.event_listener, event: kernel.exception, method: onKernelException, priority: 100 }
+  App\Shared\Infrastructure\Http\RequestValueResolver:
+    tags:
+      - { name: controller.argument_value_resolver, priority: 100 }
+
+  App\Shop\Product\Domain\ProductRepository: '@App\Shop\Product\Infrastructure\Persistence\ProductDoctrineRepository'
+  App\Shop\Promotion\Domain\PromotionRepository: '@App\Shop\Promotion\Infrastructure\Persistence\PromotionDoctrineRepository'
+  # add more service definitions when explicit configuration is needed
+  # please note that last definitions always *replace* previous ones
+
+when@test:
+  services:
+    _instanceof:
+      App\Shared\Domain\Bus\Event\DomainEventSubscriber:
+        tags: [
+          { name: 'app.domain_event_subscriber' },
+          { name: 'messenger.message_handler', bus: 'domain.event.bus' }
+        ]
+    App\Shop\Product\Infrastructure\Persistence\ProductDoctrineRepository:
+      public: true
+      autowire: true
+    App\Shop\Promotion\Infrastructure\Persistence\PromotionDoctrineRepository:
+      public: true
+      autowire: true

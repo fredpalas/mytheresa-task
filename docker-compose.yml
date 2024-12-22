@@ -1,0 +1,53 @@
+services:
+  php-fpm:
+    build:
+      context: .
+      dockerfile: ./docker/php-fpm/Dockerfile
+      target: dev
+      args:
+        WWWUSER: ${WWWUSER:-1000}
+        ARCH: ${ARCH:-amd64}
+    volumes:
+      - .:/var/www
+    depends_on:
+      database:
+        condition: service_healthy
+    restart: unless-stopped
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+  database:
+    image: public.ecr.aws/docker/library/mysql:8.0.29-oracle
+    entrypoint: [ 'docker-entrypoint.sh', '--authentication_policy=caching_sha2_password' ]
+    volumes:
+      - ./docker/mysql/.data:/var/lib/mysql
+      - ./docker/mysql/initdb.d:/docker-entrypoint-initdb.d
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: ${MYSQL_ALLOW_EMPTY_PASSWORD:-set}
+      MYSQL_ROOT_PASSWORD: ${ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DATABASE_NAME:-mydb}
+      MYSQL_USER: ${DATABASE_USER:-local}
+      MYSQL_PASSWORD: ${DATABASE_PASSWORD:-local}
+      TZ: ${TIMEZONE:-UTC}
+    ports:
+      - ${MYSQL_HOST_PORT}:3306
+    restart: on-failure
+    healthcheck:
+      test: 'mysqladmin ping --host 127.0.0.1 --user=root --password=$$MYSQL_ROOT_PASSWORD'
+      start_interval: 30s
+      interval: 10s
+      retries: 900
+  webserver:
+    image: public.ecr.aws/nginx/nginx:latest
+    volumes:
+      - .:/var/www
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d
+    ports:
+      - ${NGINX_HOST_HTTP_PORT:-80}:80
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    restart: unless-stopped
+    depends_on:
+      php-fpm:
+        condition: service_started
+    networks:
+      default:

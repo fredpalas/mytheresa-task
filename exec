@@ -1,0 +1,198 @@
+#!/usr/bin/env bash
+ESC_SEQ="\x1b["
+COL_RESET=${ESC_SEQ}"39;49;00m"
+COL_LYELLOW=${ESC_SEQ}"33;01m"
+COL_LGREEN=${ESC_SEQ}"32;01m"
+COL_CYAN=${ESC_SEQ}"0;36m"
+COL_GREEN=${ESC_SEQ}"0;32m"
+COL_MAGENTA=${ESC_SEQ}"0;35m"
+CONTAINER_APP="php-fpm"
+CONTAINER_MYSQL="database"
+CONTAINER_DB=$CONTAINER_MYSQL
+load_dotenv() {
+  if [[ $# -lt 1 ]]; then
+      echo "Missing required parameter <file>" >&2
+      exit 1
+  fi
+  if [ -f ${1} ]; then
+    unamestr=$(uname)
+    if [ "$unamestr" = 'Linux' ]; then
+
+      export $(grep -v '^#' ${1} | xargs -d '\n')
+
+    elif [ "$unamestr" = 'FreeBSD' ] || [ "$unamestr" = 'Darwin' ]; then
+      export $(grep -v '^#' ${1} | xargs -0)
+    fi
+  fi
+}
+unload_load_dotenv() {
+  if [[ $# -lt 1 ]]; then
+        echo "Missing required parameter <file>" >&2
+        exit 1
+    fi
+  if [ -f ${1} ]; then
+    unamestr=$(uname)
+    if [ "$unamestr" = 'Linux' ]; then
+
+      unset $(grep -v '^#' ${1} | sed -E 's/(.*)=.*/\1/' | xargs -d '\n')
+
+    elif [ "$unamestr" = 'FreeBSD' ] || [ "$unamestr" = 'Darwin' ]; then
+      unset $(grep -v '^#' ${1} | sed -E 's/(.*)=.*/\1/' | xargs -0)
+    fi
+  fi
+}
+showVersion() {
+    intro="\n🐳 ${COL_GREEN}Docker Wrapper${COL_RESET} at $WORKING_DIR\n"
+    intro="$intro   ${COL_CYAN}Version ${VERSION}\n${COL_RESET}"
+
+    printf "$intro"
+}
+showHelp() {
+
+    showVersion
+
+    usage="${COL_LYELLOW}Usage:\n${COL_RESET}"
+    usage="$usage  ./exec <cmd> <options>"
+
+    commands="${COL_LYELLOW}Commands:\n${COL_RESET}"
+    commands="$commands  init                        Initialize Docker Compose configuration\n"
+    commands="$commands  console <cmd>               Run Symfony CLI in ${COL_MAGENTA}${CONTAINER_APP}${COL_RESET} container\n"
+    commands="$commands  composer <cmds>             Run Composer in ${COL_MAGENTA}${CONTAINER_APP}${COL_RESET} container\n"
+    commands="$commands  exec <container>            Execute a command in a running container\n"
+    commands="$commands  help                        Shows Help screen\n"
+    commands="$commands  logs <container> < -f >     Displays all logs for <container> and optionally tail\n"
+    commands="$commands  ps                          Display list of all running containers in current directory\n"
+    commands="$commands  start < -l >                Starts all containers defined in ${COL_LGREEN}docker-compose.yml${COL_RESET} file\n"
+    commands="$commands  stop                        Stops all containers defined in ${COL_LGREEN}docker-compose.yml${COL_RESET} file\n"
+
+    options="${COL_LYELLOW}Options:\n${COL_RESET}"
+    options="$options --help, -h                   Shows Help (this screen)\n"
+    #    options="$options --logs, -l                   Run containers in detached mode (with logging)\n"
+    options="$options --version, -V, version       Show Version\n"
+
+    examples="${COL_LYELLOW}Examples:\n${COL_RESET}"
+    examples="$examples\n  ${COL_CYAN}Initialize Docker Compose configuration\n  $ ./exec init${COL_RESET}\n"
+    examples="$examples\n  ${COL_CYAN}Start application containers\n  $ ./exec start${COL_RESET}\n"
+    examples="$examples\n  ${COL_CYAN}Stop application containers\n  $ ./exec stop${COL_RESET}\n"
+    examples="$examples\n  ${COL_CYAN}Show all container logs\n  $ ./exec logs${COL_RESET}\n"
+    examples="$examples\n  ${COL_CYAN}Install a PHP dependency\n  $ ./exec composer require <vendor/package>${COL_RESET}\n"
+    examples="$examples\n  ${COL_CYAN}Run PHP migrations\n  $ ./exec console doctrine:migrations:migrate ${COL_RESET}\n"
+
+    printf "\n"
+    printf "$usage\n\n"
+    printf "$commands\n"
+    printf "$options\n"
+    printf "$examples\n"
+
+}
+
+
+VERSION="1.0.0"
+
+if command -v docker-compose &>/dev/null; then
+  export DOCKER_COMPOSE="docker-compose"
+else
+  export DOCKER_COMPOSE="docker compose"
+fi
+COMPOSE="$DOCKER_COMPOSE -f docker-compose.yml"
+COMPOSE_EXEC_FLAGS=""
+EXEC="yes"
+
+if [ $# -gt 0 ]; then
+
+  # Source .env, which can over-ride env vars
+  # such as APP_PORT, MYSQL_PORT, and WWWUSER
+  if [ -f .env ]; then
+    source .env
+  fi
+
+  if [ "$1" == "--version" ] || [ "$1" == "-v" ] || [ "$1" == "version" ]; then
+          showVersion
+          exit 0
+  fi
+  if [ "$1" == "--help" ] || [ "$1" == "-H" ] || [ "$1" == "help" ]; then
+      showHelp
+      exit 0
+  fi
+
+  if [ -f .env.local ]; then
+      load_dotenv .env.local;
+  fi
+
+  # Start up containers
+  if [ "$1" == "init" ]; then
+      echo ""
+      echo "CMRAD DOCKER: Complete!"
+      echo "CMRAD DOCKER: Try starting it:"
+      echo "./exec start"
+  elif [ "$1" == "start" ]; then
+    $COMPOSE up -d
+  elif [ "$1" == "php" ]; then
+    shift 1
+    if [ "$EXEC" == "yes" ]; then
+      $COMPOSE exec $COMPOSE_EXEC_FLAGS \
+        -u www-data \
+        php-fpm \
+        php "$@"
+    else
+      $COMPOSE run -T --rm \
+        php-fpm \
+        php "$@"
+    fi
+  elif [ "$1" == "console" ] || [ "$1" == "cli" ]; then
+    shift 1
+    if [ "$EXEC" == "yes" ]; then
+      $COMPOSE exec $COMPOSE_EXEC_FLAGS \
+        -u www-data \
+        php-fpm \
+        php bin/console "$@"
+    else
+      $COMPOSE run -T --rm \
+        -u www-data \
+        php-fpm \
+        php bin/console "$@"
+    fi
+  elif [ "$1" == test ]; then
+    shift 1
+    if [ "$EXEC" == "yes" ]; then
+      $COMPOSE exec $COMPOSE_EXEC_FLAGS \
+        -u www-data \
+        php-fpm \
+        php bin/phpunit "$@"
+    else
+      $COMPOSE run -T --rm \
+        -u www-data \
+        php-fpm \
+        php bin/phpunit "$@"
+    fi
+
+  # If "composer" is used, pass-thru to "composer"
+  # inside a new container
+  elif [ "$1" == "composer" ] || [ "$1" == "comp" ]; then
+    shift 1
+    if [ "$EXEC" == "yes" ]; then
+      $COMPOSE exec $COMPOSE_EXEC_FLAGS \
+        -u www-data \
+        php-fpm \
+        composer "$@"
+    else
+      echo "run"
+      $COMPOSE run -T --rm \
+        -u www-data \
+        php-fpm \
+        composer "$@"
+    fi
+  elif [ "$1" == "exec" ]; then
+    shift 1
+    if [ "$EXEC" == "yes" ]; then
+      $COMPOSE exec $COMPOSE_EXEC_FLAGS \
+        "$@"
+    else
+      $COMPOSE run -T --rm \
+        "$@"
+    fi
+
+  else
+      $COMPOSE "$@"
+  fi
+fi

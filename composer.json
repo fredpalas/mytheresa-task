@@ -1,0 +1,122 @@
+{
+  "type": "project",
+  "license": "proprietary",
+  "minimum-stability": "stable",
+  "prefer-stable": true,
+  "require": {
+    "php": ">=8.2",
+    "ext-ctype": "*",
+    "ext-iconv": "*",
+    "ext-openssl": "*",
+    "doctrine/dbal": "3.9.2",
+    "doctrine/doctrine-bundle": "*",
+    "doctrine/doctrine-migrations-bundle": "^3.2",
+    "doctrine/orm": "^2.16",
+    "fakerphp/faker": "^1.23",
+    "gedmo/doctrine-extensions": "^3.17",
+    "hautelook/alice-bundle": "^2.13",
+    "lambdish/phunctional": "^2.1",
+    "nelmio/cors-bundle": "^2.5",
+    "nesbot/carbon": "^3.8",
+    "phpdocumentor/reflection-docblock": "^5.6",
+    "phpstan/phpdoc-parser": "^2.0",
+    "ramsey/uuid": "^4.7",
+    "symfony/asset": "7.1.*",
+    "symfony/console": "7.1.*",
+    "symfony/doctrine-messenger": "7.1.*",
+    "symfony/dotenv": "7.1.*",
+    "symfony/expression-language": "7.1.*",
+    "symfony/flex": "^2",
+    "symfony/framework-bundle": "7.1.*",
+    "symfony/messenger": "7.1.*",
+    "symfony/monolog-bundle": "*",
+    "symfony/property-access": "7.1.*",
+    "symfony/property-info": "7.1.*",
+    "symfony/runtime": "7.1.*",
+    "symfony/security-bundle": "7.1.*",
+    "symfony/serializer": "7.1.*",
+    "symfony/validator": "7.1.*",
+    "symfony/yaml": "7.1.*"
+  },
+  "config": {
+    "allow-plugins": {
+      "php-http/discovery": true,
+      "symfony/flex": true,
+      "symfony/runtime": true
+    },
+    "sort-packages": true
+  },
+  "autoload": {
+    "psr-4": {
+      "App\\": "src/",
+      "Shop\\": "apps/Shop/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "App\\Tests\\": "tests/"
+    }
+  },
+  "repositories": [
+  ],
+  "replace": {
+    "symfony/polyfill-ctype": "*",
+    "symfony/polyfill-iconv": "*",
+    "symfony/polyfill-php72": "*",
+    "symfony/polyfill-php73": "*",
+    "symfony/polyfill-php74": "*",
+    "symfony/polyfill-php80": "*",
+    "symfony/polyfill-php81": "*"
+  },
+  "scripts": {
+    "auto-scripts": {
+      "cache:clear": "symfony-cmd",
+      "assets:install %PUBLIC_DIR%": "symfony-cmd"
+    },
+    "copy-code-style": [
+      "@php -r \"file_exists('phpcs.xml') || copy('phpcs.xml.dist', 'phpcs.xml');\"",
+      "@php -r \"file_exists('.php-cs-fixer.php') || copy('.php-cs-fixer.dist.php', '.php-cs-fixer.php');\""
+    ],
+    "post-install-cmd": [
+      "@auto-scripts",
+      "@copy-code-style"
+    ],
+    "post-update-cmd": [
+      "@auto-scripts",
+      "@copy-code-style"
+    ],
+    "phpcs": "vendor/bin/phpcs --standard=phpcs.xml -p",
+    "phpcbf": "vendor/bin/phpcbf --standard=phpcs.xml -p",
+    "php-cs-fixer-dry-run": "PHP_CS_FIXER_FUTURE_MODE=1 vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.php --path-mode=intersection",
+    "php-cs-fixer": "PHP_CS_FIXER_FUTURE_MODE=1 vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.php --path-mode=intersection",
+    "cs-check": [
+      "@phpcs",
+      "@php-cs-fixer-dry-run"
+    ],
+    "cs-fix": [
+      "@phpcbf",
+      "@php-cs-fixer"
+    ]
+  },
+  "conflict": {
+    "symfony/symfony": "*"
+  },
+  "extra": {
+    "symfony": {
+      "allow-contrib": false,
+      "require": "7.1.*"
+    }
+  },
+  "require-dev": {
+    "doctrine/doctrine-fixtures-bundle": "^3.7",
+    "friendsofphp/php-cs-fixer": "^3.57",
+    "liip/functional-test-bundle": "^4.0.0",
+    "liip/test-fixtures-bundle": "^2.0.0",
+    "mockery/mockery": "^1.6",
+    "phpunit/phpunit": "^9.5",
+    "squizlabs/php_codesniffer": "^3.7",
+    "symfony/browser-kit": "7.1.*",
+    "symfony/css-selector": "7.1.*",
+    "symfony/phpunit-bridge": "^7.1"
+  }
+}

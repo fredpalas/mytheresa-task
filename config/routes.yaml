@@ -1,0 +1,14 @@
+controllers:
+  resource:
+    path: ../src/
+    namespace: App
+    exclude:
+      - '../src/**/{Application}'
+      - '../src/**/{Domain}'
+  type: attribute
+
+products:
+  resource:
+    path: ../apps/Shop/Http/Controllers
+    namespace: Shop\Http\Controllers
+  type: attribute

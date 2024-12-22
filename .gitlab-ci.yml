@@ -1,0 +1,57 @@
+.app-variables:
+  variables: &app-variables # Used variables
+    PHP_IMAGE: fredpalas/docker-php-fpm:php-8.2
+
+build:backend-ci:
+  stage: build
+  interruptible: true
+  cache: &app-cache-php
+    key:
+      files:
+        - composer.lock
+    paths:
+      - vendor/
+      - .composer/cache
+  image: $PHP_IMAGE
+  variables:
+    <<: *app-variables
+    COMPOSER_CACHE_DIR: .composer/cache
+  script:
+    - composer install --prefer-dist --no-interaction
+
+test:phpunit:
+  stage: test
+  needs:
+    - build:backend-ci
+  interruptible: true
+  cache:
+    <<: *app-cache-php
+    policy: pull
+  artifacts:
+    paths:
+      - storage/logs/
+      - report-*.xml
+      - openapi/
+      - .env
+    reports:
+      junit: phpunit-report.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: phpunit-coverage.xml
+    expire_in: 1 days
+    when: always
+  coverage: '/^\s*Lines:\s*\d+.\d+\%/'
+  image: $PHP_IMAGE
+  variables:
+    <<: *app-variables
+    COMPOSER_CACHE_DIR: .composer/cache
+  services:
+    - name: public.ecr.aws/docker/library/mysql:8.0.29-oracle
+      alias: database
+      entrypoint: [ 'docker-entrypoint.sh', '--default-authentication-plugin=mysql_native_password' ]
+      variables:
+        MYSQL_ROOT_PASSWORD: 123456
+        MYSQL_DATABASE: mydb_test
+  script:
+    - composer install --prefer-dist --no-interaction
+    - php -dxdebug.mode=coverage bin/phpunit --log-junit phpunit-report.xml --coverage-cobertura phpunit-coverage.xml --coverage-text --colors=never
