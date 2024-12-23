@@ -43,6 +43,12 @@ Warning are showing because some dependencies are not updated with deprecation w
 
 `./exec console {command}`
 
+#### Docker Stop
+
+`make docker-stop` Docker stop all the containers
+
+`make docker-down` Docker stop and remove all the containers
+
 ## Decisions
 
 - Framework: Symfony 7
